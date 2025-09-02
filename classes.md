@@ -1,79 +1,49 @@
-```mermaid
 classDiagram
 direction LR
 
-%% =========================
-%%  BOUNDARY (REST / UI)
-%% =========================
-class ProdutoBoundary {
+%% ===== BOUNDARY (mínimo)
+class EstoqueBoundary {
   <<Boundary>>
-  +listar(): List~Produto~
-  +buscar(id:int): Produto
-  +criar(dto:ProdutoDTO): Produto
+  +listarProdutos(): List~Produto~
+  +criarProduto(nome:String, preco:double, qtd:int): Produto
   +repor(id:int, qtd:int): void
   +vender(id:int, qtd:int): void
-}
-class VendaBoundary {
-  <<Boundary>>
-  +listar(): List~Venda~
-  +criar(dto:VendaDTO): Venda
-  +detalhar(id:int): Venda
-}
-class UsuarioBoundary {
-  <<Boundary>>
-  +listar(): List~Usuario~
-  +criar(dto:UsuarioDTO): Usuario
+  +criarVenda(clienteId:int, itens: List~ItemVenda~): Venda
 }
 
-%% =========================
-%%  CONTROL (USE CASE)
-%% =========================
-class ProdutoControl {
+%% ===== CONTROL (mínimo)
+class EstoqueControl {
   <<Control>>
-  -repo: ProdutoRepository
   +listarProdutos(): List~Produto~
-  +buscarProduto(id:int): Produto
   +cadastrarProduto(p:Produto): Produto
   +reporEstoque(id:int, qtd:int): void
   +venderProduto(id:int, qtd:int): void
-}
-class VendaControl {
-  <<Control>>
-  -produtoRepo: ProdutoRepository
-  -vendaRepo: VendaRepository
-  -usuarioRepo: UsuarioRepository
-  +criarVenda(clienteId:int, itens: List~ItemVenda~): Venda
-  +listarVendas(): List~Venda~
-  +detalharVenda(id:int): Venda
-}
-class UsuarioControl {
-  <<Control>>
-  -repo: UsuarioRepository
-  +listarUsuarios(): List~Usuario~
-  +cadastrarUsuario(u:Usuario): Usuario
+  +registrarVenda(clienteId:int, itens: List~ItemVenda~): Venda
 }
 
-%% =========================
-%%  ENTITY (DOMÍNIO)
-%% =========================
+%% ===== ENTIDADES (essenciais)
 class Produto {
   <<Entity>>
   -id:int
   -nome:String
   -preco:double
   -quantidadeEstoque:int
-  +vender(qtd:int): void
-  +repor(qtd:int): void
+  +vender(q:int): void
+  +repor(q:int): void
   +getQuantidadeEstoque(): int
 }
+
 class Instrumento {
   <<Entity>>
-  -tipo:String
+  -tipo:String  "corda|percussao|metal"
 }
 class Acessorio {
   <<Entity>>
-  -categoria:String
+  -categoria:String  "palheta|cabo|estojo|..."
 }
+Produto <|-- Instrumento
+Produto <|-- Acessorio
+
 class Usuario {
   <<Entity>>
   -id:int
@@ -87,8 +57,10 @@ class Cliente {
 class Funcionario {
   <<Entity>>
   -cargo:String
-  +registrarVenda(v:Venda): void
 }
+Usuario <|-- Cliente
+Usuario <|-- Funcionario
+
 class Venda {
   <<Entity>>
   -id:int
@@ -98,72 +70,20 @@ class Venda {
 }
 class ItemVenda {
   <<Entity>>
-  -id:int
+  -produtoId:int
   -quantidade:int
   -precoUnit:double
   +subtotal(): double
 }
 
-%% =========================
-%%  REPOSITORY (PERSISTÊNCIA)
-%% =========================
-class ProdutoRepository {
-  <<Repository>>
-  +save(p:Produto): Produto
-  +update(p:Produto): void
-  +findById(id:int): Produto
-  +findAll(): List~Produto~
-  +delete(id:int): void
-}
-class UsuarioRepository {
-  <<Repository>>
-  +save(u:Usuario): Usuario
-  +findById(id:int): Usuario
-  +findAll(): List~Usuario~
-}
-class VendaRepository {
-  <<Repository>>
-  +save(v:Venda): Venda
-  +findById(id:int): Venda
-  +findAll(): List~Venda~
-}
-
-%% ====== HERANÇA (Entity)
-Instrumento --|> Produto
-Acessorio --|> Produto
-Cliente --|> Usuario
-Funcionario --|> Usuario
-
-%% ====== AGREGAÇÕES/COMPOSIÇÕES
+%% ===== RELAÇÕES ENTRE ENTIDADES
 Venda "1" *-- "1..*" ItemVenda : compõe
-ItemVenda "1" --> "1" Produto : referencia
-Venda "1" --> "1" Cliente : cliente
-Venda "0..*" --> "0..1" Funcionario : registradaPor
+ItemVenda --> Produto : referencia
+Venda --> Cliente : cliente
 
-%% ====== DEPENDÊNCIAS Boundary -> Control
-ProdutoBoundary ..> ProdutoControl
-VendaBoundary ..> VendaControl
-UsuarioBoundary ..> UsuarioControl
-
-%% ====== DEPENDÊNCIAS Control -> Repository
-ProdutoControl ..> ProdutoRepository
-VendaControl ..> ProdutoRepository
-VendaControl ..> VendaRepository
-VendaControl ..> UsuarioRepository
-UsuarioControl ..> UsuarioRepository
-
-%% ====== Repository -> Entity (retornos/param)
-ProdutoRepository ..> Produto
-UsuarioRepository ..> Usuario
-VendaRepository ..> Venda
-
-%% ====== Boundary usa DTOs
-class ProdutoDTO
-class ItemVendaDTO
-class VendaDTO
-class UsuarioDTO
-
-ProdutoBoundary ..> ProdutoDTO
-VendaBoundary ..> VendaDTO
-VendaDTO ..> ItemVendaDTO
-UsuarioBoundary ..> UsuarioDTO
+%% ===== FLUXO BÁSICO
+EstoqueBoundary ..> EstoqueControl
+EstoqueControl ..> Produto
+EstoqueControl ..> Venda
+EstoqueControl ..> ItemVenda
+EstoqueControl ..> Cliente
