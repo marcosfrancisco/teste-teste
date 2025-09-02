@@ -1,11 +1,10 @@
 ```mermaid
 
 flowchart LR
-
-  user[Usuario (HTML/JS)]
-  boundary[Boundary: /api/estoque]
-  control[Control: EstoqueControl]
-  repo[(SQLite: tabela produtos)]
+  user[User - HTML JS]
+  boundary[Boundary - API estoque]
+  control[Control - EstoqueControl]
+  repo[(SQLite - produtos)]
 
   user -->|HTTP| boundary
   boundary --> control
